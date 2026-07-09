@@ -7,7 +7,14 @@ const {
   entersState,
 } = require("@discordjs/voice");
 
+const path = require("path");
+const fs = require("fs");
+
+const filePath = path.join(__dirname, "../assets/audio/walls-ice-cream.mp3");
+
 async function joinVC(channel) {
+  console.log(filePath);
+console.log(fs.existsSync(filePath));
   const connection = joinVoiceChannel({
     channelId: channel.id,
     guildId: channel.guild.id,
