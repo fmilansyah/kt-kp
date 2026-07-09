@@ -6,4 +6,6 @@ function maxChar(text) {
     return sanitizedText;
 }
 
-module.exports = maxChar;
+module.exports = {
+    maxChar
+};

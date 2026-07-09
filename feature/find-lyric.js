@@ -1,4 +1,4 @@
-const maxChar = require("../utils/normalize");
+const { maxChar } = require("../utils/normalize");
 
 async function findLyric(botMusicMsg) {
     const match = botMusicMsg.match(/\*\*(.*?)\*\* \*\*by\*\* \*\*(.*?)\*\*/);

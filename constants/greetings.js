@@ -31,9 +31,9 @@ const morningGreetings = [
 
     // Personal
     `Pagi semuanya! Alsaa jangan lupa ketawa ya <@${process.env.ALSA_DC_ID}> 🤣`,
-    `Morning! AUNTY <@${process.env.AUNTY_DC_ID}> KERJAAA!!! 🫵`,
+    `Morning! AUNTY <@${process.env.AUNTY_DC_ID}> TIDURRR!!! 🫵`,
     // `Selamat pagi! Car <@${process.env.CAR_DC_ID}> siap-siap, kita berangkat ke Madura! 🚗💨`,
-    `Pagi ges! Jangan kebanyakan make ya piww <@${process.env.PIW_DC_ID}>? 🌧️`,
+    `Pagi ges! Jangan kebanyakan make ya piww <@${process.env.PIW_DC_ID}>? 🤪`,
     `Good morning! Tetaplah ceria lupi <@${process.env.LUPI_DC_ID}> 😊`,
     `Ohio! p info animek <@${process.env.EMMA_DC_ID}> di pagi hari. 😁`
 ]
