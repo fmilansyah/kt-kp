@@ -1,14 +1,15 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, MessageFlags } = require('discord.js');
+const { Client, GatewayIntentBits, MessageFlags, EmbedBuilder } = require('discord.js');
 const cron = require('node-cron');
 
-const { checkStatusCmd, translateCmd, geminiCmd } = require('./constants/commands');
+const { checkStatusCmd, translateCmd, geminiCmd, avaRobloxCmd } = require('./constants/commands');
 const translateText = require('./feature/translator');
 const askGemini = require('./feature/gemini');
 const { morningGreetings, welcomeMessage, goodbyeMessage } = require('./constants/greetings');
 const { randomArray } = require('./utils/random');
 const findLyric = require('./feature/find-lyric');
 const joinVC = require('./feature/stay-in-voice');
+const { getAvatarByUsername } = require('./feature/roblox');
 
 const activeTz = 'Asia/Jakarta';
 
@@ -118,6 +119,30 @@ client.on('messageCreate', async (message) => {
             await message.reply(answer);
         } catch (error) {
             await message.reply('Duh lagi males mikir');
+        }
+    }
+
+    if (msgUser.startsWith(avaRobloxCmd)) {
+        const usnRoblox = message.content.slice(avaRobloxCmd.length).trim();
+
+        if (!usnRoblox) {
+            return message.reply('Minta usernamenya? Contoh: `' + avaRobloxCmd + ' dotpantera`');
+        }
+
+        try {
+            // await message.channel.sendTyping();
+
+            const resp = await getAvatarByUsername(usnRoblox);
+
+            const embed = new EmbedBuilder()
+                .setTitle(resp.displayName)
+                .setImage(resp.avatar);
+
+            await message.reply({
+                embeds: [embed]
+            });
+        } catch (error) {
+            await message.reply('Ava kamu jelek');
         }
     }
 
