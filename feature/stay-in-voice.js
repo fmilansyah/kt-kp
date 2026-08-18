@@ -8,8 +8,8 @@ async function joinVC(channel) {
     channelId: channel.id,
     guildId: channel.guild.id,
     adapterCreator: channel.guild.voiceAdapterCreator,
-    selfMute: true,
-    selfDeaf: true,
+    selfMute: false,
+    selfDeaf: false,
   });
 
   connection.on(VoiceConnectionStatus.Disconnected, async () => {
