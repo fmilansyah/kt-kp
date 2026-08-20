@@ -10,6 +10,10 @@ const { randomArray } = require('./utils/random');
 const findLyric = require('./feature/find-lyric');
 const joinVC = require('./feature/stay-in-voice');
 const { getAvatarByUsername } = require('./feature/roblox');
+const {
+    startCron,
+    stopCron,
+} = require('./feature/schedule-message');
 
 const activeTz = 'Asia/Jakarta';
 
@@ -48,21 +52,7 @@ client.once('clientReady', async () => {
         timezone: activeTz,
     });
 
-    // Setiap jam lewat 45 menit
-    cron.schedule('0 * * * *', async () => {
-        try {
-            const channel = await client.channels.fetch(process.env.DISCORD_BIG_FAMILY_CHANNEL_ID);
-
-            if (channel) {
-                await channel.send('Semalam tuh kalian ngetag ada apa?');
-            }
-        } catch (error) {
-            console.error('Gagal mengirim pesan terjadwal pada jam 6 pagi:', error);
-        }
-    }, {
-        scheduled: true,
-        timezone: activeTz,
-    });
+    startCron(client, '0 * * * *');
 });
 
 client.on('guildMemberAdd', async (member) => {
@@ -164,6 +154,62 @@ client.on('messageCreate', async (message) => {
 
     if (msgUser === checkStatusCmd) {
         message.reply('GA USAH SOK ASIK!');
+    }
+
+    if (msgUser.startsWith('!startcron')) {
+        const isOwner = message.guild?.ownerId === message.author.id;
+        const isAdmin = message.member?.permissions.has('Administrator');
+
+        if (!isOwner && !isAdmin) {
+            return message.reply(
+                'Kamu tidak memiliki izin untuk menjalankan command ini.'
+            );
+        }
+
+        const schedule = message.content
+            .slice('!startcron'.length)
+            .trim();
+
+        if (!schedule) {
+            return message.reply(
+                'Masukkan cron expression.\nContoh: `!startcron 15 * * * *`'
+            );
+        }
+
+        if (!cron.validate(schedule)) {
+            return message.reply(
+                'Cron expression tidak valid.\nContoh: `15 * * * *`'
+            );
+        }
+
+        try {
+            startCron(client, schedule);
+
+            return message.reply(
+                `Cron berhasil dijalankan dengan jadwal:\n\`${schedule}\``
+            );
+        } catch (error) {
+            console.error(error);
+
+            return message.reply(
+                'Gagal menjalankan cron.'
+            );
+        }
+    }
+
+    if (msgUser === '!stopcron') {
+        const isOwner = message.guild?.ownerId === message.author.id;
+        const isAdmin = message.member?.permissions.has('Administrator');
+
+        if (!isOwner && !isAdmin) {
+            return message.reply(
+                'Kamu tidak memiliki izin untuk menjalankan command ini.'
+            );
+        }
+
+        stopCron();
+
+        return message.reply('Cron berhasil dihentikan.');
     }
 });
 
