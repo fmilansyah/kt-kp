@@ -47,6 +47,25 @@ client.once('clientReady', async () => {
         scheduled: true,
         timezone: activeTz,
     });
+
+    cron.schedule('0 * * * *', async () => {
+        try {
+            const channel = await client.channels.fetch(1495987826767036537);
+
+            if (!channel) {
+                console.log('Channel tidak ditemukan.');
+                return;
+            }
+
+            await channel.send('Semalam tuh kalian ngetag ada apa?');
+
+        } catch (error) {
+            console.error('Gagal mengirim pesan:', error);
+        }
+    }, {
+        scheduled: true,
+        timezone: activeTz,
+    });
 });
 
 client.on('guildMemberAdd', async (member) => {
