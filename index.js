@@ -49,7 +49,7 @@ client.once('clientReady', async () => {
     });
 
     // Setiap jam lewat 45 menit
-    cron.schedule('45 * * * *', async () => {
+    cron.schedule('0 * * * *', async () => {
         try {
             const channel = await client.channels.fetch(process.env.DISCORD_BIG_FAMILY_CHANNEL_ID);
 
