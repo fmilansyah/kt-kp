@@ -48,7 +48,7 @@ client.once('clientReady', async () => {
         timezone: activeTz,
     });
 
-    cron.schedule('0 * * * *', async () => {
+    cron.schedule('15 * * * *', async () => {
         try {
             const channel = await client.channels.fetch(1495987826767036537);
 
