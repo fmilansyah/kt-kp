@@ -48,19 +48,16 @@ client.once('clientReady', async () => {
         timezone: activeTz,
     });
 
-    cron.schedule('15 * * * *', async () => {
+    // Setiap jam lewat 45 menit
+    cron.schedule('45 * * * *', async () => {
         try {
-            const channel = await client.channels.fetch(1495987826767036537);
+            const channel = await client.channels.fetch(process.env.DISCORD_BIG_FAMILY_CHANNEL_ID);
 
-            if (!channel) {
-                console.log('Channel tidak ditemukan.');
-                return;
+            if (channel) {
+                await channel.send('Semalam tuh kalian ngetag ada apa?');
             }
-
-            await channel.send('Semalam tuh kalian ngetag ada apa?');
-
         } catch (error) {
-            console.error('Gagal mengirim pesan:', error);
+            console.error('Gagal mengirim pesan terjadwal pada jam 6 pagi:', error);
         }
     }, {
         scheduled: true,
