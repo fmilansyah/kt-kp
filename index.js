@@ -1,215 +1,26 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, MessageFlags, EmbedBuilder } = require('discord.js');
-const cron = require('node-cron');
-
-const { checkStatusCmd, translateCmd, geminiCmd, avaRobloxCmd } = require('./constants/commands');
-const translateText = require('./feature/translator');
-const askGemini = require('./feature/gemini');
-const { morningGreetings, welcomeMessage, goodbyeMessage } = require('./constants/greetings');
-const { randomArray } = require('./utils/random');
-const findLyric = require('./feature/find-lyric');
-const joinVC = require('./feature/stay-in-voice');
-const { getAvatarByUsername } = require('./feature/roblox');
-const {
-    startCron,
-    stopCron,
-} = require('./feature/schedule-message');
-
-const activeTz = 'Asia/Jakarta';
+const { Client, GatewayIntentBits } = require('discord.js');
+const { joinVoiceChannel } = require('@discordjs/voice');
 
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildVoiceStates
     ]
 });
 
 client.once('clientReady', async () => {
-    console.log(`Bot berhasil online`);
+    console.log(`Bot berhasil online sebagai ${client.user.tag}`);
 
-    // Join voice channel
     const voiceChannel = await client.channels.fetch(process.env.DISCORD_VOICE_CHANNEL_ID);
     if (voiceChannel) {
-        joinVC(voiceChannel);
-    }
-
-    // Jam 6 pagi
-    cron.schedule('0 6 * * *', async () => {
-        try {
-            const channel = await client.channels.fetch(process.env.DISCORD_CHANNEL_ID);
-
-            if (channel) {
-                await channel.send(randomArray(morningGreetings));
-            }
-        } catch (error) {
-            console.error('Gagal mengirim pesan terjadwal pada jam 6 pagi:', error);
-        }
-    }, {
-        scheduled: true,
-        timezone: activeTz,
-    });
-
-    startCron(client, '0 * * * *');
-});
-
-client.on('guildMemberAdd', async (member) => {
-    const memberId = member.user.id;
-    const channel = await client.channels.fetch(process.env.DISCORD_WELCOME_CHANNEL_ID);
-    if (channel) {
-        await channel.send(randomArray(welcomeMessage) + ` <@${memberId}>`);
-    }
-});
-
-client.on('guildMemberRemove', async (member) => {
-    const memberName = member.displayName;
-    const channel = await client.channels.fetch(process.env.DISCORD_WELCOME_CHANNEL_ID);
-    if (channel) {
-        await channel.send(randomArray(goodbyeMessage) + ' ' + memberName);
-    }
-});
-
-client.on('messageCreate', async (message) => {
-    const musicChannelId = process.env.DISCORD_MUSIC_CHANNEL_ID;
-    if (message.author.bot && message.channel.id === musicChannelId) {
-        const channel = await client.channels.fetch(musicChannelId);
-        const botMusicMsg = message.embeds?.[0]?.description ?? '';
-
-        if (channel && botMusicMsg.includes('Started playing')) {
-            // await message.channel.sendTyping();
-
-            const lyric = await findLyric(botMusicMsg);
-            if (lyric) {
-                await message.reply({
-                    content: lyric,
-                    flags: MessageFlags.SuppressNotifications
-                });
-            }
-        }
-    }
-
-    if (message.author.bot) return;
-
-    const msgUser = message.content.toLowerCase();
-
-    if (msgUser.startsWith(translateCmd)) {
-        const originalText = message.content.slice(translateCmd.length).trim();
-
-        if (!originalText) {
-            return message.reply('Apa yang mau ditranslate? Contoh: `translate king aku cinta kamu`');
-        }
-
-        try {
-            // await message.channel.sendTyping();
-
-            const resultTranslated = await translateText(originalText);
-            await message.reply(resultTranslated);
-        } catch (error) {
-            await message.reply('Translate aja sendiri lah');
-        }
-    }
-
-    if (msgUser.startsWith(geminiCmd)) {
-        const question = message.content.slice(geminiCmd.length).trim();
-
-        if (!question) {
-            return message.reply('Mana pertanyaannya? Contoh: `tanya king apa itu roblox?`');
-        }
-
-        try {
-            // await message.channel.sendTyping();
-
-            const answer = await askGemini(question);
-            await message.reply(answer);
-        } catch (error) {
-            await message.reply('Duh lagi males mikir');
-        }
-    }
-
-    if (msgUser.startsWith(avaRobloxCmd)) {
-        const usnRoblox = message.content.slice(avaRobloxCmd.length).trim();
-
-        if (!usnRoblox) {
-            return message.reply('Minta usernamenya? Contoh: `' + avaRobloxCmd + ' dotpantera`');
-        }
-
-        try {
-            // await message.channel.sendTyping();
-
-            const resp = await getAvatarByUsername(usnRoblox);
-
-            const embed = new EmbedBuilder()
-                .setTitle(resp.displayName)
-                .setImage(resp.avatar);
-
-            await message.reply({
-                embeds: [embed]
-            });
-        } catch (error) {
-            await message.reply('Ava kamu jelek');
-        }
-    }
-
-    if (msgUser === checkStatusCmd) {
-        message.reply('GA USAH SOK ASIK!');
-    }
-
-    if (msgUser.startsWith('!startcron')) {
-        const isOwner = message.guild?.ownerId === message.author.id;
-        const isAdmin = message.member?.permissions.has('Administrator');
-
-        if (!isOwner && !isAdmin) {
-            return message.reply(
-                'Kamu tidak memiliki izin untuk menjalankan command ini.'
-            );
-        }
-
-        const schedule = message.content
-            .slice('!startcron'.length)
-            .trim();
-
-        if (!schedule) {
-            return message.reply(
-                'Masukkan cron expression.\nContoh: `!startcron 15 * * * *`'
-            );
-        }
-
-        if (!cron.validate(schedule)) {
-            return message.reply(
-                'Cron expression tidak valid.\nContoh: `15 * * * *`'
-            );
-        }
-
-        try {
-            startCron(client, schedule);
-
-            return message.reply(
-                `Cron berhasil dijalankan dengan jadwal:\n\`${schedule}\``
-            );
-        } catch (error) {
-            console.error(error);
-
-            return message.reply(
-                'Gagal menjalankan cron.'
-            );
-        }
-    }
-
-    if (msgUser === '!stopcron') {
-        const isOwner = message.guild?.ownerId === message.author.id;
-        const isAdmin = message.member?.permissions.has('Administrator');
-
-        if (!isOwner && !isAdmin) {
-            return message.reply(
-                'Kamu tidak memiliki izin untuk menjalankan command ini.'
-            );
-        }
-
-        stopCron();
-
-        return message.reply('Cron berhasil dihentikan.');
+        joinVoiceChannel({
+            channelId: voiceChannel.id,
+            guildId: voiceChannel.guild.id,
+            adapterCreator: voiceChannel.guild.voiceAdapterCreator,
+            selfDeaf: false,
+            selfMute: false
+        });
     }
 });
 
